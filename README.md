@@ -2,7 +2,7 @@
 
 Pulls messy data from free, keyless public sources, cleans it, and ranks it to find a customer problem worth solving. The README will lead with the metrics table once results exist (see `docs/OUTCOMES.md`).
 
-**Status:** Phase 0 (manual baseline). No ingestion code yet, by design.
+**Status:** Phase 0 (baseline). The scout has produced a scored shortlist in `docs/phase0-candidates.xlsx`, waiting for Peter's labels. No Phase 1 ingestion pipeline yet.
 
 ## Docs
 - `REQUIREMENTS.md`: scope and phases
@@ -22,6 +22,19 @@ npm test
 
 The scout finds candidate problems on Hacker News and USAspending, scores them (rules plus a local model, see ADR-002), and writes a ranked shortlist for you to label.
 
+### What the scout does
+
+1. **It searches.** It looks at Hacker News "Ask HN" posts from the past year, using phrases like "manually", "hours a week" and "is there a tool". It also searches USAspending for government contracts in areas like data entry and records management.
+2. **It cleans up.** It drops posts with no body text and product launches like "I built…". It never keeps usernames.
+3. **It scores with rules.** Each item gets six scores from 1 to 3. Rules handle the simple ones. More comments or more matching phrases means higher Frequency. USAspending data is public, so Free data scores high there.
+4. **It asks the local model.** The model reads each post. It decides whether it's a real problem and drops the ones that aren't. It writes a one-line summary of the problem. It scores Pain, Messy data, Backend weight and Reachable, and says why.
+5. **It ranks.** It adds up the six scores, so totals run from 6 to 18. It takes the best 12 Hacker News posts and the best 8 USAspending themes.
+6. **It writes the results.** It creates the Excel workbook and a Markdown copy. Each score shows its reason and whether a rule or the model gave it.
+7. **It saves its work.** Downloaded pages are kept for a day. Model answers are kept until the model or the prompt changes. So re-runs are fast, and nothing gets asked twice.
+8. **It plays it safe.** It sends at most one request per second to each site. If Ollama is off, it uses saved answers and falls back to rules for the rest. It never overwrites a workbook you've started labeling.
+
+In short: it does the reading you didn't want to do, and hands you a short, scored list to judge.
+
 ### 1. Start the local model (only needed to judge new posts)
 
 ```sh
@@ -33,7 +46,7 @@ ollama serve           # leave running in its own terminal tab
 
 ```sh
 npm run scout                   # model judges the top 80 HN posts by rule score
-npm run scout -- --judge-all    # model judges every HN post (all ~270, about 45 min the first time)
+npm run scout -- --judge-all    # model judges every HN post (all ~270, about an hour the first time)
 npm run scout -- --no-model     # rules only, ignores the model and its cache
 ```
 

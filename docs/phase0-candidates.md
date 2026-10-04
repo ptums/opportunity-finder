@@ -1,6 +1,6 @@
 # Phase 0 candidates (auto-generated)
 
-Generated 2026-10-04T13:26:51.777Z by `npm run scout` in 3731.2s. Hybrid (ADR-002): Pain, Messy, Backend, Reachable for HN by **qwen3:8b** (prompt judge-v1) on the top 271 HN items by rule score; everything else by rules.
+Generated 2026-10-04T13:58:46.201Z by `npm run scout` in 0.5s. Hybrid (ADR-002): Pain, Messy, Backend, Reachable for HN by **qwen3:8b** (prompt judge-v1) on the top 271 HN items by rule score; everything else by rules.
 
 HN posts found: 271; dropped by model as not-a-problem: 136; USAspending themes: 8. Showing top 12 HN + top 8 USAspending.
 
@@ -305,7 +305,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 
 ## Run stats
 
-Fetch: 0.4s. Model: 191 judged, 80 from cache, 0 failures, 0 skipped (no cache, Ollama off), 3731s model time.
+Fetch: 0.2s. Model: 0 judged, 271 from cache, 0 failures, 0 skipped (no cache, Ollama off), 0s model time.
 
 | Source | HTTP requests | Cache hits | Errors |
 | --- | --- | --- | --- |

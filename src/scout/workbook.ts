@@ -29,7 +29,12 @@ const CRITERIA: [keyof Scores, string][] = [
   ["reachable", "Reach"],
   ["freeData", "Free data"],
 ];
-const INPUT_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF2CC" } };
+// Light blue marks cells Peter types into; yellow is reserved for "neutral" in the color scale.
+const INPUT_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDDEBF7" } };
+// Excel's standard good / neutral / bad styles. Higher scores are better.
+const GOOD = { font: { color: { argb: "FF006100" } }, fill: { type: "pattern", pattern: "solid", bgColor: { argb: "FFC6EFCE" } } } as const;
+const NEUTRAL = { font: { color: { argb: "FF9C5700" } }, fill: { type: "pattern", pattern: "solid", bgColor: { argb: "FFFFEB9C" } } } as const;
+const BAD = { font: { color: { argb: "FF9C0006" } }, fill: { type: "pattern", pattern: "solid", bgColor: { argb: "FFFFC7CE" } } } as const;
 const HEADER_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F3864" } };
 const REF_FONT = { name: FONT, size: 10, color: { argb: "FF7F7F7F" } };
 const FIRST = 5; // first data row on Candidates
@@ -80,8 +85,12 @@ export async function writeWorkbook(path: string, rows: Ranked[], meta: Workbook
   ws.getCell("A1").value = "Phase 0 candidates";
   ws.getCell("A1").font = { name: FONT, bold: true, size: 14 };
   ws.getCell("A2").value =
-    "Edit the yellow cells: scores (1–3), Pursue? (yes / maybe / no), Notes. Total, Band, and the Summary sheet recalculate. " +
+    "You can edit the six score columns (1–3), Pursue? and Notes (light blue). Total, Band, and the Summary sheet recalculate. " +
     "Example: Pursue? = maybe, Notes = \"talk to 2 bookkeepers before deciding\". Grey columns are the scout's original output for comparison.";
+  ws.getCell("A3").value =
+    "Colors: higher is better. Green = good (score 3, Total 15+, Shortlist). Yellow = neutral (score 2, Total 10–14). Red = weak (score 1, Total under 10, Drop).";
+  ws.getCell("A3").font = { name: FONT, bold: true, size: 10 };
+  ws.mergeCells("A3:S3");
   ws.getCell("A2").font = { name: FONT, italic: true, size: 10 };
   ws.mergeCells("A2:S2");
   ws.getRow(2).height = 30;
@@ -123,7 +132,6 @@ export async function writeWorkbook(path: string, rows: Ranked[], meta: Workbook
       cell.font = { name: FONT, size: 10 };
       cell.alignment = { vertical: "top", wrapText: n === 3 || n === 14 || n === 19 };
     });
-    for (let n = 5; n <= 10; n++) ws.getCell(r, n).fill = INPUT_FILL;
     for (const n of [13, 14]) ws.getCell(r, n).fill = INPUT_FILL;
     for (const n of [16, 17, 18, 19]) ws.getCell(r, n).font = REF_FONT;
     ws.getCell(r, 4).font = { name: FONT, size: 10, color: { argb: "FF0563C1" }, underline: true };
@@ -142,16 +150,28 @@ export async function writeWorkbook(path: string, rows: Ranked[], meta: Workbook
       showErrorMessage: true, errorTitle: "Pursue?", error: "Choose yes, maybe, or no.",
     };
   }
-  ws.addConditionalFormatting({
-    ref: `L${FIRST}:L${last}`,
-    rules: [
-      { type: "containsText", operator: "containsText", text: "Shortlist", priority: 1,
-        style: { fill: { type: "pattern", pattern: "solid", bgColor: { argb: "FFC6EFCE" } } } },
-      { type: "containsText", operator: "containsText", text: "Drop", priority: 2,
-        style: { fill: { type: "pattern", pattern: "solid", bgColor: { argb: "FFFFC7CE" } } } },
-    ],
-  });
-  [5, 10, 60, 7, 7, 7, 8, 9, 8, 9, 8, 11, 9, 30, 10, 9, 10, 10, 45].forEach((w, i) => (ws.getColumn(i + 1).width = w));
+  const cf = (ref: string, rules: ExcelJS.ConditionalFormattingRule[]) => ws.addConditionalFormatting({ ref, rules });
+  cf(`E${FIRST}:J${last}`, [
+    { type: "cellIs", operator: "equal", formulae: ["3"], priority: 1, style: GOOD },
+    { type: "cellIs", operator: "equal", formulae: ["2"], priority: 2, style: NEUTRAL },
+    { type: "cellIs", operator: "equal", formulae: ["1"], priority: 3, style: BAD },
+  ]);
+  cf(`K${FIRST}:K${last}`, [
+    { type: "cellIs", operator: "greaterThan", formulae: ["14"], priority: 4, style: GOOD },
+    { type: "cellIs", operator: "between", formulae: ["10", "14"], priority: 5, style: NEUTRAL },
+    { type: "cellIs", operator: "lessThan", formulae: ["10"], priority: 6, style: BAD },
+  ]);
+  // Exact-match expressions rather than "containsText" rules: exceljs omits the rule's text
+  // attribute, and plain formulas behave the same in Excel, Numbers, and LibreOffice.
+  const byText = (c: string, good: string, neutral: string, bad: string, p: number) =>
+    cf(`${c}${FIRST}:${c}${last}`, [
+      { type: "expression", formulae: [`$${c}${FIRST}="${good}"`], priority: p, style: GOOD },
+      { type: "expression", formulae: [`$${c}${FIRST}="${neutral}"`], priority: p + 1, style: NEUTRAL },
+      { type: "expression", formulae: [`$${c}${FIRST}="${bad}"`], priority: p + 2, style: BAD },
+    ]);
+  byText("L", "Shortlist", "Middle", "Drop", 7);
+  byText("M", "yes", "maybe", "no", 10);
+  [5, 13, 60, 7, 7, 7, 8, 9, 8, 9, 8, 11, 9, 30, 10, 9, 10, 10, 45].forEach((w, i) => (ws.getColumn(i + 1).width = w));
   ws.autoFilter = `A${FIRST - 1}:S${last}`;
 
   // --- Score reasons (scout's original scores; also the baseline for "Scores changed") ---
@@ -240,6 +260,13 @@ export async function writeWorkbook(path: string, rows: Ranked[], meta: Workbook
       c.alignment = { wrapText: true, vertical: "top" };
     });
   });
+  ([[2, BAD], [3, NEUTRAL], [4, GOOD]] as const).forEach(([n, st]) => {
+    const c = rb.getCell(1, n);
+    c.fill = { type: "pattern", pattern: "solid", fgColor: st.fill.bgColor };
+    c.font = { name: FONT, bold: true, color: st.font.color };
+  });
+  rb.getCell("A10").value = "Higher is better: 3 is the strongest score on every criterion, 1 the weakest.";
+  rb.getCell("A10").font = { name: FONT, italic: true, size: 10 };
   [16, 26, 30, 34, 30].forEach((w, i) => (rb.getColumn(i + 1).width = w));
 
   wb.views = [{ activeTab: 0, x: 0, y: 0, width: 20000, height: 12000, firstSheet: 0, visibility: "visible" }];
