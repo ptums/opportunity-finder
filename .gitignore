@@ -8,3 +8,7 @@ coverage/
 .DS_Store
 data/raw-cache/
 data/judge-cache/
+
+# Office lock files
+.~lock.*#
+~$*

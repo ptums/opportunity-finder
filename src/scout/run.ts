@@ -9,22 +9,14 @@ import { stats } from "./http.js";
 import { judge, judgeStats, JUDGE_MODEL, ollamaAvailable, PROMPT_VERSION } from "./judge.js";
 import { applyJudgment, total, type Scores } from "./score.js";
 import { scoutUsaspending, type UsaCandidate } from "./usaspending.js";
+import { type Ranked, workbookHasLabels, writeWorkbook } from "./workbook.js";
 
 const OUT = "docs/phase0-candidates.md";
+const XLSX = "docs/phase0-candidates.xlsx";
 const HN_TOP = 12;
 const USA_TOP = 8;
 const DEFAULT_JUDGE_LIMIT = 80;
 
-interface Ranked {
-  source: string;
-  url: string;
-  title: string;
-  problem: string;
-  snippet: string;
-  publishedAt: string;
-  scores: Scores;
-  ruleTotal: number;
-}
 
 const esc = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 
@@ -65,7 +57,11 @@ async function outputPath(): Promise<string> {
   return labeled ? OUT.replace(".md", `-${Date.now()}.md`) : OUT;
 }
 
-async function judgeHn(hn: HnCandidate[], limit: number): Promise<{ kept: Ranked[]; dropped: number }> {
+async function judgeHn(
+  hn: HnCandidate[],
+  limit: number,
+  cacheOnly: boolean,
+): Promise<{ kept: Ranked[]; dropped: number }> {
   const byRule = [...hn].sort((a, b) => total(b.scores) - total(a.scores));
   const kept: Ranked[] = [];
   let dropped = 0;
@@ -76,7 +72,7 @@ async function judgeHn(hn: HnCandidate[], limit: number): Promise<{ kept: Ranked
       continue;
     }
     process.stdout.write(`\rjudging ${i + 1}/${Math.min(limit, byRule.length)}…`);
-    const j = await judge(c.title, c.body);
+    const j = await judge(c.title, c.body, { cacheOnly });
     if (!j) {
       kept.push(base); // model failed: keep rule scores
     } else if (!j.isProblem) {
@@ -96,13 +92,13 @@ async function main() {
   const [hn, usa] = await Promise.all([scoutHn(365), scoutUsaspending(`${year - 1}-10-01`, `${year}-09-30`)]);
   const fetchSeconds = (Date.now() - t0) / 1000;
 
-  let useModel = !args.has("--no-model");
-  if (useModel && !(await ollamaAvailable())) {
-    console.warn(`Ollama or model ${JUDGE_MODEL} not available; falling back to rules only.`);
-    useModel = false;
+  const useModel = !args.has("--no-model");
+  const cacheOnly = useModel && !(await ollamaAvailable());
+  if (cacheOnly) {
+    console.warn(`Ollama or model ${JUDGE_MODEL} not available; using cached judgments only, rules for the rest.`);
   }
   const limit = !useModel ? 0 : args.has("--judge-all") ? hn.length : DEFAULT_JUDGE_LIMIT;
-  const { kept: hnRanked, dropped } = await judgeHn(hn, limit);
+  const { kept: hnRanked, dropped } = await judgeHn(hn, limit, cacheOnly);
   const usaRanked: Ranked[] = usa.map((c: UsaCandidate) => ({ ...c, problem: c.title, ruleTotal: total(c.scores) }));
 
   const byScore = (a: Ranked, b: Ranked) => total(b.scores) - total(a.scores) || b.ruleTotal - a.ruleTotal;
@@ -111,6 +107,7 @@ async function main() {
 
   const method = useModel
     ? `Hybrid (ADR-002): Pain, Messy, Backend, Reachable for HN by **${JUDGE_MODEL}** (prompt ${PROMPT_VERSION}) on the top ${limit} HN items by rule score; everything else by rules.`
+      + (cacheOnly ? ` Ollama was not running: ${judgeStats.skipped} items with no cached judgment used rules.` : "")
     : "Rules only (model not used).";
 
   const md = [
@@ -131,7 +128,7 @@ async function main() {
     ...top.map(detail),
     "## Run stats",
     "",
-    `Fetch: ${fetchSeconds.toFixed(1)}s. Model: ${judgeStats.judged} judged, ${judgeStats.cacheHits} from cache, ${judgeStats.failures} failures, ${judgeStats.seconds.toFixed(0)}s model time.`,
+    `Fetch: ${fetchSeconds.toFixed(1)}s. Model: ${judgeStats.judged} judged, ${judgeStats.cacheHits} from cache, ${judgeStats.failures} failures, ${judgeStats.skipped} skipped (no cache, Ollama off), ${judgeStats.seconds.toFixed(0)}s model time.`,
     "",
     "| Source | HTTP requests | Cache hits | Errors |",
     "| --- | --- | --- | --- |",
@@ -141,7 +138,9 @@ async function main() {
 
   const out = await outputPath();
   await writeFile(out, md);
-  console.log(`Wrote ${out}: ${top.length} candidates in ${seconds}s`);
+  const xlsx = (await workbookHasLabels(XLSX)) ? XLSX.replace(".xlsx", `-${Date.now()}.xlsx`) : XLSX;
+  await writeWorkbook(xlsx, top, { generatedAt: new Date().toISOString(), method: method.replace(/\*\*/g, "") });
+  console.log(`Wrote ${out} and ${xlsx}: ${top.length} candidates in ${seconds}s`);
   console.log(JSON.stringify({ http: stats, model: judgeStats, dropped }));
 }
 
