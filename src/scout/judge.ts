@@ -88,7 +88,7 @@ export function parseJudgment(raw: unknown, model: string): Judgment | null {
   };
 }
 
-export const judgeStats = { judged: 0, cacheHits: 0, failures: 0, seconds: 0 };
+export const judgeStats = { judged: 0, cacheHits: 0, failures: 0, skipped: 0, seconds: 0 };
 
 export async function ollamaAvailable(): Promise<boolean> {
   try {
@@ -101,8 +101,11 @@ export async function ollamaAvailable(): Promise<boolean> {
   }
 }
 
-/** Judge one post. Returns null on any failure so callers fall back to rule scores. */
-export async function judge(title: string, body: string): Promise<Judgment | null> {
+/**
+ * Judge one post. Returns null on any failure so callers fall back to rule scores.
+ * With cacheOnly (Ollama not running), returns a cached judgment or null without calling the model.
+ */
+export async function judge(title: string, body: string, opts: { cacheOnly?: boolean } = {}): Promise<Judgment | null> {
   const input = `Title: ${title}\n\nPost: ${body.slice(0, 3000)}`;
   const key = createHash("sha256").update(`${JUDGE_MODEL}\n${PROMPT_VERSION}\n${input}`).digest("hex");
   const cachePath = join(CACHE_DIR, `${key}.json`);
@@ -115,6 +118,10 @@ export async function judge(title: string, body: string): Promise<Judgment | nul
     }
   } catch {
     // cache miss
+  }
+  if (opts.cacheOnly) {
+    judgeStats.skipped++;
+    return null;
   }
 
   const t0 = Date.now();

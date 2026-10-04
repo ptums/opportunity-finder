@@ -1,8 +1,8 @@
 # Phase 0 candidates (auto-generated)
 
-Generated 2026-10-04T13:26:51.777Z by `npm run scout` in 3731.2s. Hybrid (ADR-002): Pain, Messy, Backend, Reachable for HN by **qwen3:8b** (prompt judge-v1) on the top 271 HN items by rule score; everything else by rules.
+Generated 2026-10-04T05:17:56.582Z by `npm run scout` in 0.5s. Hybrid (ADR-002): Pain, Messy, Backend, Reachable for HN by **qwen3:8b** (prompt judge-v1) on the top 80 HN items by rule score; everything else by rules. Ollama was not running: 0 items with no cached judgment used rules.
 
-HN posts found: 271; dropped by model as not-a-problem: 136; USAspending themes: 8. Showing top 12 HN + top 8 USAspending.
+HN posts found: 271; dropped by model as not-a-problem: 41; USAspending themes: 8. Showing top 12 HN + top 8 USAspending.
 
 Review each row: change any score you disagree with and fill in **Pursue?** (yes / maybe / no). **Rules** is the rules-only total, kept so your labels can measure whether the model helped.
 
@@ -17,15 +17,15 @@ Review each row: change any score you disagree with and fill in **Pursue?** (yes
 | 7 | HN | [link](https://news.ycombinator.com/item?id=49438590) | Principal engineers struggle to trust AI with design decisions in complex codebases. | 2 | 3 | 2 | 3 | 3 | 2 | **15** | 11 | |
 | 8 | HN | [link](https://news.ycombinator.com/item?id=47139307) | Network engineers struggle to maintain accurate, up-to-date documentation of network relationships. | 1 | 3 | 3 | 3 | 3 | 2 | **15** | 10 | |
 | 9 | HN | [link](https://news.ycombinator.com/item?id=46197005) | Freelancers lose time and revenue due to fragmented tools and workflows. | 1 | 3 | 3 | 3 | 3 | 2 | **15** | 10 | |
-| 10 | HN | [link](https://news.ycombinator.com/item?id=46333430) | GitHub users experience inconsistent release visibility and UI errors across regions. | 1 | 3 | 3 | 3 | 3 | 2 | **15** | 9 | |
-| 11 | HN | [link](https://news.ycombinator.com/item?id=46037226) | Developers struggle to maintain accurate call state and real-time billing in browser-based VoIP. | 1 | 3 | 3 | 3 | 3 | 2 | **15** | 9 | |
-| 12 | HN | [link](https://news.ycombinator.com/item?id=47092547) | Architectural startups need automated 3D geometry extraction from 2D floor plans. | 1 | 3 | 3 | 3 | 3 | 2 | **15** | 9 | |
-| 13 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_15A00024FAQ000034_1560_15A00023DAQA00029_1560) | Agencies repeatedly buy "data entry" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
-| 14 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_DELM0000421_8900_-NONE-_-NONE-) | Agencies repeatedly buy "records management" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
-| 15 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_70SBUR24F00000192_7003_70RTAC23A00000001_7001) | Agencies repeatedly buy "digitization" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
-| 16 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_75FCMC22F0005_7530_47QTCA19D00AJ_4732) | Agencies repeatedly buy "reconciliation" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
-| 17 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_70CTD026FC0000012_7012_70RTAC26A00000001_7001) | Agencies repeatedly buy "case management system" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
-| 18 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_75N94024F00001_7529_HHSN316201200044W_7529) | Agencies repeatedly buy "grants management" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 10 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_15A00024FAQ000034_1560_15A00023DAQA00029_1560) | Agencies repeatedly buy "data entry" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 11 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_DELM0000421_8900_-NONE-_-NONE-) | Agencies repeatedly buy "records management" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 12 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_70SBUR24F00000192_7003_70RTAC23A00000001_7001) | Agencies repeatedly buy "digitization" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 13 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_75FCMC22F0005_7530_47QTCA19D00AJ_4732) | Agencies repeatedly buy "reconciliation" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 14 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_70CTD026FC0000012_7012_70RTAC26A00000001_7001) | Agencies repeatedly buy "case management system" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 15 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_75N94024F00001_7529_HHSN316201200044W_7529) | Agencies repeatedly buy "grants management" services | 3 | 3 | 1 | 3 | 1 | 3 | **14** | 14 | |
+| 16 | HN | [link](https://news.ycombinator.com/item?id=47565502) | EU-based founders face permanent fund withholding by Stripe without legal basis. | 2 | 3 | 2 | 3 | 2 | 2 | **14** | 12 | |
+| 17 | HN | [link](https://news.ycombinator.com/item?id=47846253) | Solo builders face a sudden $25/mo cost jump after free tier egress cap | 1 | 3 | 2 | 3 | 3 | 2 | **14** | 12 | |
+| 18 | HN | [link](https://news.ycombinator.com/item?id=48820488) | Agents waste output tokens by restating old code during edits. | 1 | 3 | 3 | 3 | 2 | 2 | **14** | 12 | |
 | 19 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_50310221F0183_5000_SECHQ117A0007_5000) | Agencies repeatedly buy "data cleansing" services | 1 | 2 | 1 | 3 | 1 | 3 | **11** | 11 | |
 | 20 | USAspending | [link](https://www.usaspending.gov/award/CONT_AWD_2031ZB25F00031_2041_47QTCB21D0306_4732) | Agencies repeatedly buy "legacy system modernization" services | 1 | 2 | 1 | 3 | 1 | 3 | **11** | 11 | |
 
@@ -157,49 +157,7 @@ Original title: Freelancers are losing ~30% of their time and revenue to tool fr
 - Reachable 3 (model qwen3:8b): A specific group: freelancers and small agency owners who manage client work.
 - Free data 2 (rule): default: unknown, assume partly public
 
-### 10. GitHub users experience inconsistent release visibility and UI errors across regions.
-HN · 2025-12-20 · https://news.ycombinator.com/item?id=46333430
-
-Original title: Is GitHub becoming more and more unstable?
-
-> I have been noticing several issues with GitHub over the last few weeks, most of which used to work flawlessly a few months ago. The outages aside, a couple of annoying, super-recent experiences: - Our release process involves creating draft releases before QA, and publishing the…
-
-- Frequency 1 (rule): 4 comments, matched 1 phrase
-- Pain 3 (model qwen3:8b): Users had to unpublish and re-publish, and re-test manually due to UI issues.
-- Messy 3 (model qwen3:8b): Release visibility differed by region, and UI issues were inconsistent across systems.
-- Backend 3 (model qwen3:8b): Involves real ingestion, matching, and storage of release data across global systems.
-- Reachable 3 (model qwen3:8b): Specific group: software teams using GitHub for release management and CI/CD.
-- Free data 2 (rule): default: unknown, assume partly public
-
-### 11. Developers struggle to maintain accurate call state and real-time billing in browser-based VoIP.
-HN · 2025-11-24 · https://news.ycombinator.com/item?id=46037226
-
-Original title: Building CallSpark (browser based VoIP): what I learned and what caused pain
-
-> I’ve been building CallSpark, a browser-based calling platform. The core VoIP flow through Twilio’s browser SDK worked as advertised. The hard parts were elsewhere. The easy part Twilio’s SDK was straightforward. Initialize a Device, pass in a token, call connect. WebRTC and audi…
-
-- Frequency 1 (rule): 0 comments, matched 1 phrase
-- Pain 3 (model qwen3:8b): The post states 'you quickly run into edge cases' and 'reconcile without double-charging'.
-- Messy 3 (model qwen3:8b): Call state is 'spread across several systems with no shared key' due to UI and backend disconnection.
-- Backend 3 (model qwen3:8b): The post describes 'real ingestion, matching, and storage' with a periodic worker and reconciliation.
-- Reachable 3 (model qwen3:8b): The post targets 'developers building real-time billing for VoIP' who can be found in relevant communities or job roles.
-- Free data 2 (rule): default: unknown, assume partly public
-
-### 12. Architectural startups need automated 3D geometry extraction from 2D floor plans.
-HN · 2026-02-20 · https://news.ycombinator.com/item?id=47092547
-
-Original title: Instance segmentation model that extracts 3D geometry from 2D floor plans
-
-> Hey HN, I am an ML Engineer and a full-stack software engineer. For the past few weekends, I have been working on a pipeline to solve a PropTech problem: turning messy, highly occluded 2D floor plans into clean, structured data for 3D extrusion. Originally demoed for a firm hirin…
-
-- Frequency 1 (rule): 0 comments, matched 1 phrase
-- Pain 3 (model qwen3:8b): They rely on human data entry, which is time-consuming and costly.
-- Messy 3 (model qwen3:8b): 2D floor plans are messy, highly occluded, and contain intersecting elements.
-- Backend 3 (model qwen3:8b): Involves real ingestion, matching, and storage of structured 3D geometry data.
-- Reachable 3 (model qwen3:8b): Specific group: PropTech startups and product builders in that space.
-- Free data 2 (rule): default: unknown, assume partly public
-
-### 13. Agencies repeatedly buy "data entry" services
+### 10. Agencies repeatedly buy "data entry" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_15A00024FAQ000034_1560_15A00023DAQA00029_1560
 
 
@@ -212,7 +170,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 - Reachable 1 (rule): government buyers are hard to reach (guess; vendors may be easier)
 - Free data 3 (rule): USAspending is public
 
-### 14. Agencies repeatedly buy "records management" services
+### 11. Agencies repeatedly buy "records management" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_DELM0000421_8900_-NONE-_-NONE-
 
 
@@ -225,7 +183,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 - Reachable 1 (rule): government buyers are hard to reach (guess; vendors may be easier)
 - Free data 3 (rule): USAspending is public
 
-### 15. Agencies repeatedly buy "digitization" services
+### 12. Agencies repeatedly buy "digitization" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_70SBUR24F00000192_7003_70RTAC23A00000001_7001
 
 
@@ -238,7 +196,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 - Reachable 1 (rule): government buyers are hard to reach (guess; vendors may be easier)
 - Free data 3 (rule): USAspending is public
 
-### 16. Agencies repeatedly buy "reconciliation" services
+### 13. Agencies repeatedly buy "reconciliation" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_75FCMC22F0005_7530_47QTCA19D00AJ_4732
 
 
@@ -251,7 +209,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 - Reachable 1 (rule): government buyers are hard to reach (guess; vendors may be easier)
 - Free data 3 (rule): USAspending is public
 
-### 17. Agencies repeatedly buy "case management system" services
+### 14. Agencies repeatedly buy "case management system" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_70CTD026FC0000012_7012_70RTAC26A00000001_7001
 
 
@@ -264,7 +222,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 - Reachable 1 (rule): government buyers are hard to reach (guess; vendors may be easier)
 - Free data 3 (rule): USAspending is public
 
-### 18. Agencies repeatedly buy "grants management" services
+### 15. Agencies repeatedly buy "grants management" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_75N94024F00001_7529_HHSN316201200044W_7529
 
 
@@ -276,6 +234,48 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 - Backend 3 (rule): data-processing service by keyword choice
 - Reachable 1 (rule): government buyers are hard to reach (guess; vendors may be easier)
 - Free data 3 (rule): USAspending is public
+
+### 16. EU-based founders face permanent fund withholding by Stripe without legal basis.
+HN · 2026-03-29 · https://news.ycombinator.com/item?id=47565502
+
+Original title: Stripe withheld $85k from our EU platform
+
+> I'm the founder of Zorq AI (zorqai.com), an AI video and image generation platform based in Sweden. I want to share what happened to us as a warning to other founders, and to seek advice from anyone who has been through something similar. We launched in November 2025 and grew qui…
+
+- Frequency 2 (rule): 19 comments, matched 1 phrases
+- Pain 3 (model qwen3:8b): Stripe withheld $85k without citing policy violations or legal basis.
+- Messy 2 (model qwen3:8b): Stripe's decision lacks transparency and specific policy references.
+- Backend 3 (model qwen3:8b): Stripe's decision involves legal and regulatory implications under PSD2.
+- Reachable 2 (model qwen3:8b): Founders in the EU and Stripe-related legal experts are the target audience.
+- Free data 2 (rule): default: unknown, assume partly public
+
+### 17. Solo builders face a sudden $25/mo cost jump after free tier egress cap
+HN · 2026-04-21 · https://news.ycombinator.com/item?id=47846253
+
+Original title: Hit Supabase's free→$25 pricing cliff. Any middle-tier options?
+
+> Solo builder here. I'm running sqlquest.app — an adaptive SQL tutor — on Supabase's free tier since January. Traffic is tiny, maybe 10-20 real sessions a day. Every page load touches 5-6 tables though, and egress adds up quick when your app does state sync properly. Went ~15% ove…
+
+- Frequency 1 (rule): 3 comments, matched 1 phrase
+- Pain 3 (model qwen3:8b): Paid $25 to avoid downtime during critical demo, explicitly stated
+- Messy 2 (model qwen3:8b): Traffic is tiny but page loads touch 5-6 tables, implying inconsistent data access
+- Backend 3 (model qwen3:8b): Involves state sync, egress, and API requests with real consequences
+- Reachable 3 (model qwen3:8b): Specific group: solo builders using Supabase, can be found in HN or Supabase community
+- Free data 2 (rule): default: unknown, assume partly public
+
+### 18. Agents waste output tokens by restating old code during edits.
+HN · 2026-07-07 · https://news.ycombinator.com/item?id=48820488
+
+Original title: I have an interesting idea to reduce the output tokens almost by fifty percent
+
+> Most token-saving tools focus on input tokens, but output tokens are usually priced higher, and edit-heavy agent sessions waste a lot of them on a specific pattern: to safely edit a file, the agent has to output the old code block plus the new code block, just so the harness can …
+
+- Frequency 1 (rule): 0 comments, matched 1 phrase
+- Pain 3 (model qwen3:8b): The post states "edit-heavy agent sessions waste a lot of them" and "half the tokens going out are just the agent restating content".
+- Messy 3 (model qwen3:8b): Data is spread across several systems (agent, harness, file system) with no shared key (blob ID vs live file).
+- Backend 3 (model qwen3:8b): The post describes "real ingestion, matching, and storage" with "git's merge machinery" and "blob ids".
+- Reachable 2 (model qwen3:8b): The post targets "harness builders" who are a known community in AI agent development.
+- Free data 2 (rule): default: unknown, assume partly public
 
 ### 19. Agencies repeatedly buy "data cleansing" services
 USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_AWD_50310221F0183_5000_SECHQ117A0007_5000
@@ -305,7 +305,7 @@ USAspending · 2025-10-01..2026-09-30 · https://www.usaspending.gov/award/CONT_
 
 ## Run stats
 
-Fetch: 0.4s. Model: 191 judged, 80 from cache, 0 failures, 0 skipped (no cache, Ollama off), 3731s model time.
+Fetch: 0.3s. Model: 0 judged, 80 from cache, 0 failures, 0 skipped (no cache, Ollama off), 0s model time.
 
 | Source | HTTP requests | Cache hits | Errors |
 | --- | --- | --- | --- |
