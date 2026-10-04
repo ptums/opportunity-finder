@@ -21,8 +21,10 @@ export const PROMPT_V2 = readFileSync(join(dirname(fileURLToPath(import.meta.url
 
 const CACHE_DIR = "data/judge-cache";
 /** Output ceiling per request; also the worst case the cost estimate assumes. */
-// Raised from 1500 on 2026-10-04: Sonnet truncated answers at 1500 (stop_reason max_tokens).
-export const MAX_OUTPUT_TOKENS = 3000;
+// 1500 → 3000 → back to 1500 (2026-10-04, Peter approved). The 3000 ceiling was for Sonnet's digit
+// loop, which the enum schema fixed. Real answers average ~700 tokens, and the estimate assumes this
+// ceiling, so 3000 pushed a full-list run past the $5 cap. A truncated answer is a recorded failure.
+export const MAX_OUTPUT_TOKENS = 1500;
 const BODY_CHARS = 3000;
 
 export type JudgeName = "local" | "haiku" | "sonnet";

@@ -51,7 +51,7 @@ async function uncached(spec: JudgeSpec, items: EvalItem[]): Promise<EvalItem[]>
 async function dryRun(items: EvalItem[]) {
   const spent = await readSpent();
   console.log(`Frozen set: ${items.length} items (${items.filter((i) => i.label).length} labeled). Logged API spend so far: $${spent.toFixed(4)}.`);
-  console.log(`Estimate: input = chars ÷ 3.5 × 1.2; output = ${MAX_OUTPUT_TOKENS} tokens per item (ceiling).`);
+  console.log(`Estimate: input = chars ÷ 2.0 × 1.2; output = ${MAX_OUTPUT_TOKENS} tokens per item (ceiling).`);
   for (const spec of Object.values(JUDGES)) {
     const todo = await uncached(spec, items);
     if (spec.backend === "ollama") {
