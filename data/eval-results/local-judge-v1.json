@@ -1,0 +1,56 @@
+{
+  "judge": "local",
+  "model": "qwen3:8b",
+  "prompt": "judge-v1",
+  "runAt": "2026-10-04T20:20:07.787Z",
+  "report": {
+    "items": 80,
+    "judged": 80,
+    "labeled": 80,
+    "agreement": 0.525,
+    "precision": 0.5555555555555556,
+    "recall": 0.1282051282051282,
+    "fpRateByReason": {
+      "nostalgia": {
+        "rate": null,
+        "n": 0
+      },
+      "no_buyer": {
+        "rate": 0,
+        "n": 2
+      },
+      "off_the_shelf": {
+        "rate": null,
+        "n": 0
+      },
+      "off_lane": {
+        "rate": 0.5,
+        "n": 2
+      },
+      "not_a_need": {
+        "rate": 0.5,
+        "n": 2
+      },
+      "other": {
+        "rate": null,
+        "n": 0
+      },
+      "uncoded": {
+        "rate": 0.05714285714285714,
+        "n": 35
+      }
+    },
+    "evidenceValidity": null,
+    "rubricEcho": 0.146875,
+    "shortlisted": 9,
+    "knownFpShortlisted": [
+      "#1",
+      "#6",
+      "#3",
+      "#8",
+      "#9",
+      "#5"
+    ]
+  },
+  "costPer1000": "$0 (local)"
+}

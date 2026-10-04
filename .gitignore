@@ -12,3 +12,6 @@ data/judge-cache/
 # Office lock files
 .~lock.*#
 ~$*
+
+# Peter's labels and notes stay local (public repo)
+docs/eval-labels.xlsx

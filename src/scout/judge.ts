@@ -12,7 +12,7 @@ export const PROMPT_VERSION = "judge-v1";
 
 const CACHE_DIR = "data/judge-cache";
 
-const SYSTEM_PROMPT = `You review posts from a tech forum to find real, recurring customer problems that a small software product could solve.
+export const SYSTEM_PROMPT = `You review posts from a tech forum to find real, recurring customer problems that a small software product could solve.
 
 For the post, decide:
 - is_problem: true only if someone describes a concrete problem they or their users have. False for product launches, self-promotion, general discussion, opinion pieces, or career questions.

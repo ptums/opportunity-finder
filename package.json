@@ -10,9 +10,11 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
-    "scout": "tsx src/scout/run.ts",
+    "scout": "node --env-file-if-exists=.env --import tsx src/scout/run.ts",
     "db:up": "docker compose up -d db",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "eval": "node --env-file-if-exists=.env --import tsx src/scout/eval.ts",
+    "eval:export": "tsx src/scout/eval-export.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
@@ -20,5 +22,9 @@
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "zod": "^4.6.5"
   }
 }

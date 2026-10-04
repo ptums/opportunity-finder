@@ -31,12 +31,16 @@ interface AlgoliaHit {
 
 export interface HnCandidate {
   source: "HN";
+  /** HN item id (the post, not its author). */
+  id: string;
   url: string;
   title: string;
   /** Full decoded post text, used for model judging; only `snippet` is written out. */
   body: string;
   snippet: string;
   publishedAt: string;
+  /** Comment count: shown as popularity, not frequency (ADR-003). */
+  comments: number;
   phrases: string[];
   scores: Scores;
 }
@@ -91,11 +95,13 @@ export async function scoutHn(sinceDays = 365): Promise<HnCandidate[]> {
       const body = htmlToText(hit.story_text ?? "");
       return {
         source: "HN" as const,
+        id: hit.objectID,
         url: `https://news.ycombinator.com/item?id=${hit.objectID}`,
         title,
         body,
         snippet: body.slice(0, 280),
         publishedAt: hit.created_at.slice(0, 10),
+        comments: hit.num_comments ?? 0,
         phrases: [...phrases],
         scores: scoreText(`${title} ${body}`, hit.num_comments ?? 0, phrases.size),
       };
