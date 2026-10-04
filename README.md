@@ -20,49 +20,68 @@ npm test
 ```
 ## Phase 0 scout
 
-The scout finds candidate problems on Hacker News and USAspending, scores them (rules plus a local model, see ADR-002), and writes a ranked shortlist for you to label.
+The scout finds candidate problems on Hacker News and USAspending, checks and scores them with a model judge (scorer v2, see ADR-003), and writes a ranked shortlist for you to label.
 
 ### What the scout does
 
 1. **It searches.** It looks at Hacker News "Ask HN" posts from the past year, using phrases like "manually", "hours a week" and "is there a tool". It also searches USAspending for government contracts in areas like data entry and records management.
-2. **It cleans up.** It drops posts with no body text and product launches like "I built…". It never keeps usernames.
-3. **It scores with rules.** Each item gets six scores from 1 to 3. Rules handle the simple ones. More comments or more matching phrases means higher Frequency. USAspending data is public, so Free data scores high there.
-4. **It asks the local model.** The model reads each post. It decides whether it's a real problem and drops the ones that aren't. It writes a one-line summary of the problem. It scores Pain, Messy data, Backend weight and Reachable, and says why.
-5. **It ranks.** It adds up the six scores, so totals run from 6 to 18. It takes the best 12 Hacker News posts and the best 8 USAspending themes.
-6. **It writes the results.** It creates the Excel workbook and a Markdown copy. Each score shows its reason and whether a rule or the model gave it.
-7. **It saves its work.** Downloaded pages are kept for a day. Model answers are kept until the model or the prompt changes. So re-runs are fast, and nothing gets asked twice.
-8. **It plays it safe.** It sends at most one request per second to each site. If Ollama is off, it uses saved answers and falls back to rules for the rest. It never overwrites a workbook you've started labeling.
+2. **It cleans up.** It drops posts with no body text and product launches like "I built…". It never keeps usernames. Only a post's title and body are ever sent to a model.
+3. **It gates.** The judge must pass four gates before a post can make the shortlist. Each gate result comes with a quote from the post:
+   - **G1 current problem:** a problem happening now, not a story, nostalgia, an opinion, venting or a launch.
+   - **G2 need:** the author asks for help or states a written-down need.
+   - **G3 not trivial:** no named product (or a plain spreadsheet) already solves *this author's* problem. A failed G3 must name the tool.
+   - **G4 author has it:** the author or their team has the problem; they are not pitching or doing customer discovery.
 
-In short: it does the reading you didn't want to do, and hands you a short, scored list to judge.
+   Posts that fail a gate go to the **Gated out** sheet with the deciding quote.
+4. **It scores.** Each post gets 1–3 on Pain, Messy data, Backend weight, Reachable, **Buyer** and Free data:
+   - **Reachable** means you could find and message five people with the problem, judged by where they gather (not by how specific the group sounds).
+   - **Buyer** means the person with the problem, or someone they report to, would plausibly pay. A frustrated user with no budget scores 1.
+   - Free data is a rule.
+   - Comment count is shown as **Popularity** and is not part of the total.
+5. **It checks the evidence.** Every gate and score needs a 4–25 word quote that really appears in the post (matching ignores case, whitespace and punctuation). A score without a valid quote is marked **unsupported** and left out of the total, and the post is marked for review. Run `npm run eval` to see how often reasons just repeat the rubric.
+6. **It ranks.** Shortlist = all four gates pass and no score is unsupported, ranked by total (no cutoff). Hacker News posts come first, then the best 8 USAspending themes, whose rule-only totals aren't comparable.
+7. **It writes the results.** Each run writes a new timestamped workbook and Markdown file (`docs/scout-v2-<date>.xlsx/.md`), so it never touches a file you've labeled.
+8. **It saves its work and money.** Downloaded pages are kept for a day. Model answers are kept per model, prompt version and post text, so re-runs cost nothing. It sends at most one request per second to each site.
 
-### 1. Start the local model (only needed to judge new posts)
+### 1. Choose a judge
 
-```sh
-ollama pull qwen3:8b   # first time only, about 5 GB
-ollama serve           # leave running in its own terminal tab
-```
+| `--judge` | Model | Cost | Notes |
+|---|---|---|---|
+| `sonnet` (default) | claude-sonnet-5-5 | about $12 per 1,000 posts | Chosen after the judge comparison in `docs/OUTCOMES.md` |
+| `haiku` | claude-haiku-4-5-20251001 | about $4 per 1,000 posts | Cheaper; its gates were much less discriminating |
+| `local` | qwen3:8b via Ollama | $0 | The rollback. Runs the old judge-v1 prompt unless you pass `--prompt judge-v2.1` |
+
+Paid judges read `ANTHROPIC_API_KEY` from `.env` (see `.env.example`). Before any call, the scout estimates the cost and stops if it is over $5 for the run or $20 in total. It makes no paid calls without `--confirm-spend`. Spend is logged in `docs/API-SPEND.md`.
 
 ### 2. Run the scout
 
 ```sh
-npm run scout                   # model judges the top 80 HN posts by rule score
-npm run scout -- --judge-all    # model judges every HN post (all ~270, about an hour the first time)
-npm run scout -- --no-model     # rules only, ignores the model and its cache
+npm run scout -- --dry-run                 # fetch (from cache if fresh), print the cost estimate, write nothing
+npm run scout -- --confirm-spend           # Sonnet judges the top 80 HN posts by rule score
+npm run scout -- --judge-all --confirm-spend   # judge every HN post (~270)
+npm run scout -- --judge local             # rollback: local qwen3:8b, judge-v1 (start `ollama serve` first)
+npm run scout -- --no-model                # rules only
 ```
 
 ### 3. Label the results
 
-Open `docs/phase0-candidates.xlsx`, edit the yellow cells (scores, Pursue?, Notes), and read the metrics on the Summary sheet. A Markdown copy is written to `docs/phase0-candidates.md`. Once you have started labeling, the scout never overwrites your file; it writes a timestamped copy instead.
+Open the newest `docs/scout-v2-*.xlsx`. Edit the light-blue cells (scores, Pursue?, Notes). G1–G4, Evidence and Popularity are on the right. **Band** shows Shortlist (all gates pass) or Review. The quotes behind every gate and score are on the Score reasons sheet.
 
-### 4. Stop the model when you're done
+### 4. Measure a judge
 
-Press `Ctrl+C` in the `ollama serve` tab. If Ollama was started some other way (for example the menu-bar app), quit it from there.
+```sh
+npm run eval:export                        # refresh labels from docs/eval-labels.xlsx into the frozen set
+npm run eval -- --dry-run                  # estimate per judge, no calls
+npm run eval -- --judge sonnet --confirm-spend   # score the frozen 80-post set; updates docs/OUTCOMES.md
+```
 
-### Running without Ollama
+### Running the local model
 
-- Every model judgment is cached in `data/judge-cache/`, so `npm run scout` works with Ollama off. Posts judged before keep their model scores, and nothing is re-judged.
-- Posts that have **never** been judged get rule scores instead. The scout prints a warning, and the shortlist header says how many posts that affected. Start `ollama serve` and run again to judge them.
-- Source pages are cached for 24 hours in `data/raw-cache/`. After that, a run fetches fresh posts, and any new ones need Ollama to be judged.
-- Changing the model (`OF_OLLAMA_MODEL`) or the prompt version re-judges everything, because the cache is keyed on both.
+```sh
+ollama pull qwen3:8b   # first time only, about 5 GB
+ollama serve           # leave running in its own terminal tab; Ctrl+C when done
+```
 
-Env vars: `DATABASE_URL`, `OF_USER_AGENT` (include contact info), `OF_OLLAMA_MODEL` (default `qwen3:8b`), `OF_OLLAMA_URL`.
+If Ollama is off, `--judge local` uses cached answers and falls back to rules for posts it has never judged.
+
+Env vars: `DATABASE_URL`, `OF_USER_AGENT` (include contact info), `ANTHROPIC_API_KEY` (paid judges only; set in `.env`, never committed), `OF_OLLAMA_MODEL` (default `qwen3:8b`), `OF_OLLAMA_URL`.

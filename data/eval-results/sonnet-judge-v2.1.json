@@ -1,0 +1,49 @@
+{
+  "judge": "sonnet",
+  "model": "claude-sonnet-5-5",
+  "prompt": "judge-v2.1",
+  "runAt": "2026-10-04T21:23:24.638Z",
+  "report": {
+    "items": 80,
+    "judged": 80,
+    "labeled": 80,
+    "agreement": 0.5375,
+    "precision": 0.6666666666666666,
+    "recall": 0.10256410256410256,
+    "fpRateByReason": {
+      "nostalgia": {
+        "rate": null,
+        "n": 0
+      },
+      "no_buyer": {
+        "rate": 0,
+        "n": 2
+      },
+      "off_the_shelf": {
+        "rate": null,
+        "n": 0
+      },
+      "off_lane": {
+        "rate": 0.5,
+        "n": 2
+      },
+      "not_a_need": {
+        "rate": 0,
+        "n": 2
+      },
+      "other": {
+        "rate": null,
+        "n": 0
+      },
+      "uncoded": {
+        "rate": 0.02857142857142857,
+        "n": 35
+      }
+    },
+    "evidenceValidity": 0.8625,
+    "rubricEcho": 0.01,
+    "shortlisted": 6,
+    "knownFpShortlisted": []
+  },
+  "costPer1000": "$17.32 (all logged spend incl. retries ÷ 80 items)"
+}

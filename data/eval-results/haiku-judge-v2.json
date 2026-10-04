@@ -1,0 +1,49 @@
+{
+  "judge": "haiku",
+  "model": "claude-haiku-4-5-20251001",
+  "prompt": "judge-v2",
+  "runAt": "2026-10-04T20:39:53.892Z",
+  "report": {
+    "items": 80,
+    "judged": 80,
+    "labeled": 80,
+    "agreement": 0.5125,
+    "precision": 0.5,
+    "recall": 0.02564102564102564,
+    "fpRateByReason": {
+      "nostalgia": {
+        "rate": null,
+        "n": 0
+      },
+      "no_buyer": {
+        "rate": 0,
+        "n": 2
+      },
+      "off_the_shelf": {
+        "rate": null,
+        "n": 0
+      },
+      "off_lane": {
+        "rate": 0.5,
+        "n": 2
+      },
+      "not_a_need": {
+        "rate": 0,
+        "n": 2
+      },
+      "other": {
+        "rate": null,
+        "n": 0
+      },
+      "uncoded": {
+        "rate": 0,
+        "n": 35
+      }
+    },
+    "evidenceValidity": 0.9152777777777777,
+    "rubricEcho": 0,
+    "shortlisted": 2,
+    "knownFpShortlisted": []
+  },
+  "costPer1000": "$4.01 (all logged spend incl. retries ÷ 80 items)"
+}

@@ -10,6 +10,10 @@ export interface Scored {
   reason: string;
   /** Absent = rule-based. Set when a model produced the score (FR-17). */
   model?: { name: string; promptVersion: string };
+  /** Verbatim quote the model cited (judge-v2). */
+  quote?: string;
+  /** Set when the cited quote failed the evidence check; the score is left out of the total (ADR-003). */
+  unsupported?: true;
 }
 
 export interface Scores {
@@ -19,10 +23,17 @@ export interface Scores {
   backend: Scored;
   reachable: Scored;
   freeData: Scored;
+  /** judge-v2 only. When present, the total drops Frequency and adds Buyer (ADR-003). */
+  buyer?: Scored;
 }
 
+const counted = (x: Scored): number => (x.unsupported ? 0 : x.value);
+
+/** v1 / rules: sum of the six criteria. v2 (Buyer present): Frequency out, Buyer in, unsupported scores skipped. */
 export const total = (s: Scores): number =>
-  s.frequency.value + s.pain.value + s.messy.value + s.backend.value + s.reachable.value + s.freeData.value;
+  s.buyer
+    ? [s.pain, s.messy, s.backend, s.reachable, s.buyer, s.freeData].reduce((sum, x) => sum + counted(x), 0)
+    : s.frequency.value + s.pain.value + s.messy.value + s.backend.value + s.reachable.value + s.freeData.value;
 
 const STATED_COST = /\b\d+(\.\d+)?\s*(hours?|hrs?|days?)\s*(a|per|each|every)\s*(day|week|month|year)\b|\$\s?\d[\d,]*(\.\d+)?\s*(k|m)?\b/i;
 const PAIN_WORDS = /\b(manual(ly)?|tedious|painful|frustrat\w*|nightmare|waste\w*|time[- ]consuming|error[- ]prone|hate|struggl\w*|annoying)\b/i;
