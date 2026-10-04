@@ -9,6 +9,8 @@ export interface ItemOutcome {
   shortlisted: boolean | null;
   quotesValid: number;
   quotesTotal: number;
+  /** Strings with trailing markup stripped (judge-v2 only). */
+  artifacts?: number;
   reasons: string[];
 }
 
@@ -24,6 +26,8 @@ export interface JudgeReport {
   fpRateByReason: Record<string, { rate: number | null; n: number }>;
   evidenceValidity: number | null;
   rubricEcho: number | null;
+  /** Share of judged items with at least one string that had trailing markup stripped. */
+  junkItems: number | null;
   shortlisted: number;
   knownFpShortlisted: string[];
 }
@@ -55,6 +59,7 @@ export function report(outcomes: ItemOutcome[], echoes: (reason: string) => bool
     fpRateByReason,
     evidenceValidity: ratio(judged.reduce((s, o) => s + o.quotesValid, 0), quotesTotal),
     rubricEcho: ratio(reasons.filter(echoes).length, reasons.length),
+    junkItems: judged.some((o) => o.artifacts !== undefined) ? ratio(judged.filter((o) => (o.artifacts ?? 0) > 0).length, judged.length) : null,
     shortlisted: judged.filter((o) => o.shortlisted).length,
     knownFpShortlisted: judged.filter((o) => o.shortlisted && KNOWN_FP[o.id]).map((o) => KNOWN_FP[o.id]!),
   };

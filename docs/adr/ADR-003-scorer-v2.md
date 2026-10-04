@@ -120,6 +120,8 @@ Prices are from claude.com/pricing, fetched 2026-10-04:
   - The default `--judge` is now `sonnet`. Rollback: `--judge local`.
 - **Hard enum for scores.** Sonnet looped on digits ("0.00.00…") until `max_tokens` on 11 of 80 posts. The API ignores `minimum`/`maximum`, and the SDK's zod helper (0.131.0) also turns `enum` into a description. The judge now sends a hand-built JSON schema with `score: {"type": "integer", "enum": [1, 2, 3]}` and validates responses with zod. After the fix, 11 of 11 succeeded, at about 750 output tokens each.
 - **Output ceiling** is 3,000 tokens (it was 1,500).
+- **Sonnet thinking on (tried and reverted 2026-10-04).** Thinking on at medium effort (`judge-v2.2`) looked clean in a 3-post test. On all 80 posts, 42 of 75 answers still had junk, 22 quotes were empty, 5 answers hit `max_tokens`, and precision fell to 50%. Reverted to `judge-v2.1` (thinking off, low effort).
+- **Trailing-junk stripping** (Peter chose this 2026-10-04). Sonnet 5.5 appends markup to some strings under every setting tried, mostly `</br>` or `}`: 47 of 80 answers on judge-v2.1, versus 0 of 80 for Haiku. Before the quote check, `stripTrailingArtifacts` removes trailing tags, braces and stray quote marks unless the post contains them. The remaining words must still match the post, so invented quotes and junk mid-string still fail. Each run reports how often stripping happened ("Junk stripped").
 - **Gated-out posts** go to a "Gated out" sheet in the workbook, not to the Candidates sheet.
 
 ## Rollback

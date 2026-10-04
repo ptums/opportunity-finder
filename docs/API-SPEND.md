@@ -14,3 +14,5 @@ Caps: $5 per run, $20 total. "Actual" is computed from the API's reported usage.
 | 2026-10-04 | claude-sonnet-5-5 | judge-v2.1 | 80 | 199192 | 80497 | $2.6440 | $1.2034 | eval |
 | 2026-10-04 | claude-sonnet-5-5 | judge-v2.1 | 1 | 2425 | 3000 | $0.0350 | $0.0348 | diagnose max_tokens |
 | 2026-10-04 | claude-sonnet-5-5 | judge-v2.1 | 11 | 32467 | 8260 | $0.3657 | $0.1475 | eval |
+| 2026-10-04 | claude-sonnet-5-5 | judge-v2.1 | 3 | 8107 | 1764 | $0.2580 | $0.0339 | test: thinking adaptive, effort medium |
+| 2026-10-04 | claude-sonnet-5-5 | judge-v2.2 | 80 | 230392 | 62502 | $3.4440 | $1.0858 | eval |
