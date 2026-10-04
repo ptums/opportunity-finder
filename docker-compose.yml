@@ -1,0 +1,14 @@
+# Local development database only. Hosting is decided in docs/adr/ADR-001-stack.md.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: opportunity
+      POSTGRES_PASSWORD: opportunity_local_dev_only
+      POSTGRES_DB: opportunity_finder
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
