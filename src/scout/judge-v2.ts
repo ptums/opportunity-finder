@@ -17,7 +17,20 @@ import type { Score, Scored, Scores } from "./score.js";
 // author's problem, not a category. judge-v2.2 (thinking on, medium effort) was tried and reverted
 // the same day: junk stayed (42/75) and precision fell. judge-v2.md is kept for the record.
 export const PROMPT_V2_VERSION = "judge-v2.1";
-export const PROMPT_V2 = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "prompts", `${PROMPT_V2_VERSION}.md`), "utf8");
+/** App Store reviews use their own wording of the same gates and schema (ADR-005). */
+export const PROMPT_REVIEW_VERSION = "judge-review-v1";
+
+const promptCache = new Map<string, string>();
+/** Prompt text for a version, read from src/scout/prompts/<version>.md. */
+export function promptText(version: string): string {
+  let text = promptCache.get(version);
+  if (text === undefined) {
+    text = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "prompts", `${version}.md`), "utf8");
+    promptCache.set(version, text);
+  }
+  return text;
+}
+export const PROMPT_V2 = promptText(PROMPT_V2_VERSION);
 
 const CACHE_DIR = "data/judge-cache";
 /** Output ceiling per request; also the worst case the cost estimate assumes. */
@@ -87,16 +100,17 @@ export type ModelCriterion = (typeof MODEL_CRITERIA)[number];
 /** Exactly what is sent to the model, and what quotes are checked against. */
 export const judgeInput = (title: string, body: string): string => `Title: ${title}\n\nPost: ${body.slice(0, BODY_CHARS)}`;
 /** Characters per request (system prompt + input), for the cost estimate. */
-export const requestChars = (title: string, body: string): number => PROMPT_V2.length + judgeInput(title, body).length;
+export const requestChars = (title: string, body: string, prompt = PROMPT_V2_VERSION): number =>
+  promptText(prompt).length + judgeInput(title, body).length;
 
 export const judgeV2Stats = { judged: 0, cacheHits: 0, failures: 0, skipped: 0, seconds: 0, inputTokens: 0, outputTokens: 0 };
 
-const cachePathFor = (model: string, input: string): string =>
-  join(CACHE_DIR, `${createHash("sha256").update(`${model}\n${PROMPT_V2_VERSION}\n${input}`).digest("hex")}.json`);
+const cachePathFor = (model: string, input: string, prompt: string): string =>
+  join(CACHE_DIR, `${createHash("sha256").update(`${model}\n${prompt}\n${input}`).digest("hex")}.json`);
 
-export async function isCachedV2(judge: JudgeSpec, title: string, body: string): Promise<boolean> {
+export async function isCachedV2(judge: JudgeSpec, title: string, body: string, prompt = PROMPT_V2_VERSION): Promise<boolean> {
   try {
-    await readFile(cachePathFor(judge.model, judgeInput(title, body)), "utf8");
+    await readFile(cachePathFor(judge.model, judgeInput(title, body), prompt), "utf8");
     return true;
   } catch {
     return false;
@@ -110,7 +124,7 @@ function anthropic(): Anthropic {
   return (client ??= new Anthropic());
 }
 
-async function callOllama(model: string, input: string): Promise<unknown> {
+async function callOllama(model: string, input: string, system: string): Promise<unknown> {
   const res = await fetch(`${OLLAMA_URL}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -121,7 +135,7 @@ async function callOllama(model: string, input: string): Promise<unknown> {
       format: JUDGE_JSON_SCHEMA,
       options: { temperature: 0 },
       messages: [
-        { role: "system", content: PROMPT_V2 },
+        { role: "system", content: system },
         { role: "user", content: input },
       ],
     }),
@@ -131,7 +145,7 @@ async function callOllama(model: string, input: string): Promise<unknown> {
   return JSON.parse(data.message.content);
 }
 
-async function callAnthropic(spec: JudgeSpec, input: string): Promise<unknown> {
+async function callAnthropic(spec: JudgeSpec, input: string, system: string): Promise<unknown> {
   // Sonnet 5.5 rejects non-default temperature and can't disable thinking; "between_tools" turns it off
   // for a single-turn call. Sonnet appends junk ("</br>", "}") to some strings under any setting tried;
   // evaluateV2 strips trailing junk. Haiku 4.5 takes temperature 0 and showed no junk.
@@ -143,7 +157,7 @@ async function callAnthropic(spec: JudgeSpec, input: string): Promise<unknown> {
   const res = await anthropic().messages.create({
     model: spec.model,
     max_tokens: MAX_OUTPUT_TOKENS,
-    system: PROMPT_V2,
+    system,
     messages: [{ role: "user", content: input }],
     ...sampling,
   });
@@ -174,10 +188,11 @@ function safeError(err: unknown): string {
 export async function judgeV2(
   spec: JudgeSpec,
   item: { id: string; title: string; body: string },
-  opts: { cacheOnly?: boolean } = {},
+  opts: { cacheOnly?: boolean; prompt?: string } = {},
 ): Promise<RawJudgmentV2 | null> {
+  const prompt = opts.prompt ?? PROMPT_V2_VERSION;
   const input = judgeInput(item.title, item.body);
-  const cachePath = cachePathFor(spec.model, input);
+  const cachePath = cachePathFor(spec.model, input, prompt);
   try {
     const cached = JudgmentV2Schema.safeParse(JSON.parse(await readFile(cachePath, "utf8")));
     if (cached.success) {
@@ -194,7 +209,8 @@ export async function judgeV2(
 
   const t0 = Date.now();
   try {
-    const raw = spec.backend === "ollama" ? await callOllama(spec.model, input) : await callAnthropic(spec, input);
+    const system = promptText(prompt);
+    const raw = spec.backend === "ollama" ? await callOllama(spec.model, input, system) : await callAnthropic(spec, input, system);
     const parsed = JudgmentV2Schema.safeParse(raw);
     if (!parsed.success) throw new Error(`schema validation failed (${parsed.error.issues.length} issues)`);
     await mkdir(CACHE_DIR, { recursive: true });
@@ -235,7 +251,7 @@ export interface EvaluatedV2 {
 }
 
 /** Apply the evidence rule and gate logic to a schema-valid judgment. */
-export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, model: string): EvaluatedV2 {
+export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, model: string, prompt = PROMPT_V2_VERSION): EvaluatedV2 {
   const source = judgeInput(title, body);
   let quotesValid = 0;
   let artifacts = 0;
@@ -262,7 +278,7 @@ export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, mode
     else gates[key] = { status: g.pass ? "pass" : "fail", quote: g.quote, note: g.pass ? "" : tool };
   }
 
-  const tag = { name: model, promptVersion: PROMPT_V2_VERSION };
+  const tag = { name: model, promptVersion: prompt };
   const criteria = {} as Record<ModelCriterion, Scored>;
   const whys: string[] = [];
   for (const key of MODEL_CRITERIA) {
