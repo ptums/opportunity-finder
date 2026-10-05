@@ -49,6 +49,14 @@ describe("evaluateV2", () => {
     expect(ev.criteria.pain.unsupported).toBeUndefined();
   });
 
+  it("strips trailing junk before checking quotes and counts it", () => {
+    const junky = { ...good, pain: { ...good.pain, quote: `${q}</br>`, why: "six hours monthly}" } };
+    const ev = evaluateV2(junky, TITLE, BODY, "m");
+    expect(ev.status).toBe("passed");
+    expect(ev.artifacts).toBe(2);
+    expect(ev.criteria.pain.quote).toBe(q);
+  });
+
   it("gates out a failed gate that has a valid quote", () => {
     const ev = evaluateV2({ ...good, g4_author_has_problem: { pass: false, quote: q } }, TITLE, BODY, "m");
     expect(ev.status).toBe("gated_out");

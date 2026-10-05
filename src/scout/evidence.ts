@@ -17,6 +17,31 @@ export function normalizeForMatch(text: string): string {
     .trim();
 }
 
+// One trailing artifact: an HTML-ish tag, a brace, or a stray quote mark / comma / space.
+const TRAILING_ARTIFACT = /(<\/?[a-z]+\s*\/?>|[{}]|["'`,\s])$/i;
+
+/**
+ * Strip markup that Sonnet sometimes appends to otherwise verbatim strings ("…month.</br>",
+ * "…housing.}"). Only trailing artifacts are removed, and a tag or brace is kept if the post
+ * itself contains it. The words that remain must still match the post, so invented or
+ * reworded quotes still fail. Peter chose this on 2026-10-04 (ADR-003 amendment).
+ */
+export function stripTrailingArtifacts(text: string, sourceText: string): { text: string; stripped: boolean } {
+  let out = text;
+  for (;;) {
+    const m = out.match(TRAILING_ARTIFACT);
+    if (!m) break;
+    const token = m[1]!;
+    const markup = /[<>{}]/.test(token);
+    if (markup && sourceText.includes(token)) break;
+    out = out.slice(0, -token.length);
+  }
+  const kept = out.trimEnd();
+  // Only braces and tags count as an artifact; trailing spaces, quotes and commas are ignored anyway.
+  const stripped = /[<>{}]/.test(text.slice(kept.length));
+  return { text: stripped ? kept : text, stripped };
+}
+
 export type QuoteCheck = { valid: true } | { valid: false; why: "empty" | "too short" | "too long" | "not in post" };
 
 /** A quote is valid when it is 4–25 words and a normalized substring of the text the model saw. */

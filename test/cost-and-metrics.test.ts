@@ -15,8 +15,8 @@ describe("cost", () => {
   });
 
   it("estimates pessimistically: 20% input margin, full output ceiling", () => {
-    expect(estimateTokens(3500)).toBe(1200);
-    const est = estimateRun("claude-haiku-4-5-20251001", [3500, 3500], 1500);
+    expect(estimateTokens(2000)).toBe(1200);
+    const est = estimateRun("claude-haiku-4-5-20251001", [2000, 2000], 1500);
     expect(est).toMatchObject({ items: 2, inputTokens: 2400, outputTokens: 3000 });
     expect(est.usd).toBeCloseTo((2400 * 1 + 3000 * 5) / 1e6);
   });

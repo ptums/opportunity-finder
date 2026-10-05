@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkQuote, normalizeForMatch, rubricEchoChecker } from "../src/scout/evidence.js";
+import { checkQuote, normalizeForMatch, rubricEchoChecker, stripTrailingArtifacts } from "../src/scout/evidence.js";
 import { PROMPT_V2 } from "../src/scout/judge-v2.js";
 
 const POST =
@@ -57,5 +57,26 @@ describe("rubricEchoChecker", () => {
   });
   it("passes reasons written about the post", () => {
     expect(echoes("Bookkeeper spends six hours monthly matching payouts by hand")).toBe(false);
+  });
+});
+
+describe("stripTrailingArtifacts", () => {
+  it("strips trailing tags and braces Sonnet appends", () => {
+    expect(stripTrailingArtifacts("Our bookkeeper hates it.</br>", POST)).toEqual({ text: "Our bookkeeper hates it.", stripped: true });
+    expect(stripTrailingArtifacts('Our bookkeeper hates it."}</br>', POST)).toEqual({ text: "Our bookkeeper hates it.", stripped: true });
+    expect(stripTrailingArtifacts("Our bookkeeper hates it.</quote>", POST).text).toBe("Our bookkeeper hates it.");
+  });
+
+  it("leaves clean strings and markup the post really contains alone", () => {
+    expect(stripTrailingArtifacts("Our bookkeeper hates it.", POST)).toEqual({ text: "Our bookkeeper hates it.", stripped: false });
+    const code = "Post: call it with config {}";
+    expect(stripTrailingArtifacts("call it with config {}", code)).toEqual({ text: "call it with config {}", stripped: false });
+  });
+
+  it("does not rescue invented or junk-in-the-middle quotes", () => {
+    const invented = stripTrailingArtifacts("we lose $10,000 a year to errors</br>", POST).text;
+    expect(checkQuote(invented, POST).valid).toBe(false);
+    const middle = stripTrailingArtifacts('Our bookkeeper"} ,{"x":""} hates it', POST).text;
+    expect(checkQuote(middle, POST).valid).toBe(false);
   });
 });

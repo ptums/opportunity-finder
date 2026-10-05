@@ -12,7 +12,9 @@ export const RUN_CAP_USD = 5;
 export const TOTAL_CAP_USD = 20;
 export const SPEND_LOG = "docs/API-SPEND.md";
 
-const CHARS_PER_TOKEN = 3.5;
+// Measured 2026-10-04: actual input tokens were 1.32× (Haiku) and 1.63× (Sonnet) the 3.5 chars/token
+// estimate, so 2.0 chars/token (plus the 20% margin) keeps the estimate above both.
+const CHARS_PER_TOKEN = 2.0;
 const MARGIN = 1.2;
 
 export const estimateTokens = (chars: number): number => Math.ceil((chars / CHARS_PER_TOKEN) * MARGIN);
