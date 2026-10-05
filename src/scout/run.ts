@@ -10,12 +10,14 @@
 //   --confirm-spend               # required before a paid judge makes any API call
 import { access, readFile, writeFile } from "node:fs/promises";
 import { appendSpend, checkCaps, estimateRun, readSpent } from "./cost.js";
+import { appStoreStats, scoutAppStore } from "./appstore.js";
+import { scoutCityContracts } from "./citycontracts.js";
 import { scoutHn, type HnCandidate } from "./hn.js";
 import { stats } from "./http.js";
 import { judge, judgeStats, JUDGE_MODEL, ollamaAvailable, PROMPT_VERSION } from "./judge.js";
 import {
   applyJudgmentV2, evaluateV2, isCachedV2, isJudgeName, JUDGES, type JudgeSpec, judgeV2, judgeV2Stats,
-  MAX_OUTPUT_TOKENS, PROMPT_V2_VERSION, requestChars,
+  MAX_OUTPUT_TOKENS, PROMPT_CONTRACT_VERSION, PROMPT_REVIEW_VERSION, PROMPT_V2_VERSION, requestChars,
 } from "./judge-v2.js";
 import { applyJudgment, total, type Scored } from "./score.js";
 import { scoutUsaspending, type UsaCandidate } from "./usaspending.js";
@@ -24,6 +26,8 @@ import { type GatedOut, type Ranked, workbookHasLabels, writeWorkbook } from "./
 const OUT = "docs/phase0-candidates.md";
 const XLSX = "docs/phase0-candidates.xlsx";
 const HN_TOP = 12;
+const CONTRACTS_TOP = 15;
+const APPSTORE_TOP = 12;
 const USA_TOP = 8;
 const DEFAULT_JUDGE_LIMIT = 80;
 
@@ -101,25 +105,40 @@ async function judgeHn(
   return { kept, dropped };
 }
 
-async function judgeHnV2(
+/** Anything with post-like text the v2 judge can read: HN posts, App Store reviews, city contracts. */
+type TextCandidate = Omit<HnCandidate, "source"> & { source: string };
+
+/** A judged text source and the block it gets in the workbook (ADR-005, ADR-006). */
+interface TextSource {
+  label: string;
+  prompt: string;
+  items: TextCandidate[];
+  /** How many items are judged (HN: top N by rule score; others: everything after pre-filters). */
+  limit: number;
+  top: number;
+}
+
+async function judgeTextV2(
   spec: JudgeSpec,
-  hn: HnCandidate[],
+  items: TextCandidate[],
   limit: number,
   cacheOnly: boolean,
+  prompt: string,
+  label: string,
 ): Promise<{ kept: Ranked[]; gatedOut: GatedOut[] }> {
-  const byRule = [...hn].sort((a, b) => total(b.scores) - total(a.scores));
+  const byRule = [...items].sort((a, b) => total(b.scores) - total(a.scores));
   const kept: Ranked[] = [];
   const gatedOut: GatedOut[] = [];
   for (const [i, c] of byRule.entries()) {
     const base: Ranked = { ...c, problem: c.title, ruleTotal: total(c.scores), popularity: c.comments };
     if (i >= limit) break; // v2 lists judged posts only; rule-only rows have no gates to show
-    process.stdout.write(`\rjudging ${i + 1}/${Math.min(limit, byRule.length)}…`);
-    const j = await judgeV2(spec, c, { cacheOnly });
+    process.stdout.write(`\rjudging ${label} ${i + 1}/${Math.min(limit, byRule.length)}…`);
+    const j = await judgeV2(spec, c, { cacheOnly, prompt });
     if (!j) {
       kept.push({ ...base, status: "needs_review", evidence: "judge failed" }); // keep rule scores, flag it
       continue;
     }
-    const ev = evaluateV2(j, c.title, c.body, spec.model);
+    const ev = evaluateV2(j, c.title, c.body, spec.model, prompt);
     if (ev.status === "gated_out") {
       gatedOut.push({ url: c.url, title: c.title, problem: ev.problem, gates: ev.gates });
       continue;
@@ -154,18 +173,38 @@ async function main() {
 
   const t0 = Date.now();
   const year = new Date().getUTCFullYear();
-  const [hn, usa] = await Promise.all([scoutHn(365), scoutUsaspending(`${year - 1}-10-01`, `${year}-09-30`)]);
+  const [hn, usa] = await Promise.all([
+    args.has("--no-hn") ? Promise.resolve([] as HnCandidate[]) : scoutHn(365),
+    scoutUsaspending(`${year - 1}-10-01`, `${year}-09-30`),
+  ]);
+  // New text sources run only on the v2 judge path (they need gates and quotes).
+  const contracts = v2 && !args.has("--no-contracts") ? await scoutCityContracts() : [];
+  const reviews = v2 && !args.has("--no-appstore") ? await scoutAppStore() : [];
   const fetchSeconds = (Date.now() - t0) / 1000;
 
   const useModel = !args.has("--no-model");
   const limit = !useModel ? 0 : args.has("--judge-all") ? hn.length : DEFAULT_JUDGE_LIMIT;
+  const sources: TextSource[] = [
+    { label: "City contracts", prompt: PROMPT_CONTRACT_VERSION, items: contracts, limit: useModel ? contracts.length : 0, top: CONTRACTS_TOP },
+    { label: "App Store", prompt: PROMPT_REVIEW_VERSION, items: reviews, limit: useModel ? reviews.length : 0, top: APPSTORE_TOP },
+    { label: "HN", prompt: PROMPT_V2_VERSION, items: hn, limit, top: HN_TOP },
+  ];
   const toJudge = [...hn].sort((a, b) => total(b.scores) - total(a.scores)).slice(0, limit);
 
   let estimatedUsd = 0;
   if (useModel && v2 && spec.backend === "anthropic") {
-    const todo: HnCandidate[] = [];
-    for (const c of toJudge) if (!(await isCachedV2(spec, c.title, c.body))) todo.push(c);
-    const est = estimateRun(spec.model, todo.map((c) => requestChars(c.title, c.body)), MAX_OUTPUT_TOKENS);
+    const chars: number[] = [];
+    let todoCount = 0;
+    for (const src of sources) {
+      const judged = [...src.items].sort((a, b) => total(b.scores) - total(a.scores)).slice(0, src.limit);
+      for (const c of judged) {
+        if (await isCachedV2(spec, c.title, c.body, src.prompt)) continue;
+        chars.push(requestChars(c.title, c.body, src.prompt));
+        todoCount++;
+      }
+    }
+    const todo = { length: todoCount };
+    const est = estimateRun(spec.model, chars, MAX_OUTPUT_TOKENS);
     estimatedUsd = est.usd;
     console.log(`${spec.model}: ${todo.length} uncached items, ~${est.inputTokens} input + ≤${est.outputTokens} output tokens, est. ≤ $${est.usd.toFixed(4)}`);
     checkCaps(est.usd, await readSpent());
@@ -179,20 +218,33 @@ async function main() {
     return;
   }
 
+  // Scorer v2: items that passed every gate rank above those needing review, then by total (no cutoff).
+  const gateRank = (r: Ranked) => (r.status === "passed" ? 0 : r.status === "needs_review" ? 1 : 0);
+  const byScore = (a: Ranked, b: Ranked) =>
+    gateRank(a) - gateRank(b) || total(b.scores) - total(a.scores) || b.ruleTotal - a.ruleTotal;
   const cacheOnly = useModel && spec.backend === "ollama" && !(await ollamaAvailable());
   if (cacheOnly) {
     console.warn(`Ollama or model ${JUDGE_MODEL} not available; using cached judgments only, rules for the rest.`);
   }
-  let hnRanked: Ranked[];
+  let hnRanked: Ranked[] = [];
   let dropped = 0;
-  let gatedOut: GatedOut[] = [];
+  const gatedOut: GatedOut[] = [];
+  const blocks: Ranked[][] = [];
   if (v2 && useModel) {
-    ({ kept: hnRanked, gatedOut } = await judgeHnV2(spec, hn, limit, cacheOnly));
-    dropped = gatedOut.length;
+    for (const src of sources) {
+      const r = await judgeTextV2(spec, src.items, src.limit, cacheOnly, src.prompt, src.label);
+      gatedOut.push(...r.gatedOut);
+      if (src.label === "HN") {
+        hnRanked = r.kept;
+        dropped = r.gatedOut.length;
+      } else {
+        blocks.push(r.kept.sort(byScore).slice(0, src.top));
+      }
+    }
     const calls = judgeV2Stats.judged + judgeV2Stats.failures;
     if (spec.backend === "anthropic" && calls > 0) {
       await appendSpend({
-        model: spec.model, promptVersion: prompt, items: calls,
+        model: spec.model, promptVersion: sources.filter((x) => x.items.length).map((x) => x.prompt).join("+"), items: calls,
         inputTokens: judgeV2Stats.inputTokens, outputTokens: judgeV2Stats.outputTokens,
         estimatedUsd, note: "scout",
       });
@@ -201,15 +253,11 @@ async function main() {
     ({ kept: hnRanked, dropped } = await judgeHn(hn, limit, cacheOnly));
   }
   const usaRanked: Ranked[] = usa.map((c: UsaCandidate) => ({ ...c, problem: c.title, ruleTotal: total(c.scores) }));
-
-  // Scorer v2: posts that passed every gate rank above those needing review, then by total (no cutoff).
-  const gateRank = (r: Ranked) => (r.status === "passed" ? 0 : r.status === "needs_review" ? 1 : 0);
-  const byScore = (a: Ranked, b: Ranked) =>
-    gateRank(a) - gateRank(b) || total(b.scores) - total(a.scores) || b.ruleTotal - a.ruleTotal;
   const hnTop = hnRanked.sort(byScore).slice(0, HN_TOP);
   const usaTop = usaRanked.sort(byScore).slice(0, USA_TOP);
   // v2 HN totals (no Frequency, plus Buyer) aren't comparable with USAspending's, so keep the sources in blocks.
-  const top = v2 && useModel ? [...hnTop, ...usaTop] : [...hnTop, ...usaTop].sort(byScore);
+  // Totals differ in makeup between sources, so v2 output keeps one block per source: new sources first.
+  const top = v2 && useModel ? [...blocks.flat(), ...hnTop, ...usaTop] : [...hnTop, ...usaTop].sort(byScore);
   const seconds = ((Date.now() - t0) / 1000).toFixed(1);
 
   const method = !useModel
@@ -225,7 +273,7 @@ async function main() {
     "",
     `Generated ${new Date().toISOString()} by \`npm run scout\` in ${seconds}s. ${method}`,
     "",
-    `HN posts found: ${hn.length}; dropped by model ${v2 ? "at a gate" : "as not-a-problem"}: ${dropped}; USAspending themes: ${usa.length}. Showing top ${HN_TOP} HN + top ${USA_TOP} USAspending.`,
+    `City contracts: ${contracts.length} after pre-filters; App Store reviews: ${reviews.length} after pre-filters${appStoreStats.emptyFeeds.length ? ` (feed returned no reviews for ${appStoreStats.emptyFeeds.length} apps)` : ""}; HN posts found: ${hn.length}; HN dropped by model ${v2 ? "at a gate" : "as not-a-problem"}: ${dropped}; total gated out (all sources): ${gatedOut.length}; USAspending themes: ${usa.length}. Showing top ${CONTRACTS_TOP} city contracts, ${APPSTORE_TOP} App Store, ${HN_TOP} HN, ${USA_TOP} USAspending.`,
     "",
     "Review each row: change any score you disagree with and fill in **Pursue?** (yes / maybe / no). **Rules** is the rules-only total, kept so your labels can measure whether the model helped.",
     "",

@@ -19,6 +19,8 @@ import type { Score, Scored, Scores } from "./score.js";
 export const PROMPT_V2_VERSION = "judge-v2.1";
 /** App Store reviews use their own wording of the same gates and schema (ADR-005). */
 export const PROMPT_REVIEW_VERSION = "judge-review-v1";
+/** City contract and purchase records (ADR-006). */
+export const PROMPT_CONTRACT_VERSION = "judge-contract-v1";
 
 const promptCache = new Map<string, string>();
 /** Prompt text for a version, read from src/scout/prompts/<version>.md. */
