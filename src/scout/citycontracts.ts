@@ -136,9 +136,12 @@ export const OUT_OF_SCOPE_DEPT = /police|nypd|court|correction|probation|distric
 export function preFilter(rows: CityContract[]): CityContract[] {
   const seen = new Set<string>();
   const out: CityContract[] = [];
+  // Same city + same description (e.g. two fleet-maintenance contracts) counts once.
+  const sameText = (r: CityContract) => `${r.city}:${r.description.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()}`;
   for (const r of [...rows].sort((a, b) => b.date.localeCompare(a.date))) {
-    if (seen.has(r.key) || words(r.description) < MIN_WORDS || OUT_OF_SCOPE_DEPT.test(r.department)) continue;
+    if (seen.has(r.key) || seen.has(sameText(r)) || words(r.description) < MIN_WORDS || OUT_OF_SCOPE_DEPT.test(r.department)) continue;
     seen.add(r.key);
+    seen.add(sameText(r));
     out.push(r);
     if (out.length >= PER_CITY) break;
   }

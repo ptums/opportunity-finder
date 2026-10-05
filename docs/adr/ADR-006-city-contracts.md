@@ -30,6 +30,12 @@ A city's contract for a service ("records digitization for building permits", "c
 4. **Output:** a "City contracts" block first in the workbook, with the top 15 gate-passing contracts. Then App Store (empty while Apple's feed is down), HN and USAspending. `--no-contracts` skips this source.
 5. **Cost:** about $1.30 actual per refresh (120 items). The dry run estimated up to $2.37, including 2 HN retries.
 
+## Amendment (2026-10-05, Peter: "tighten the contract prompt and rerun")
+
+- **`judge-contract-v2`:** G1 now requires the work to be mainly information or process handling (records, documents, applications, permits, scheduling, tracking, billing, notices, case files, inspection results, testing, reporting). Physical-labor services (repairs, maintenance, cleaning, tree work, towing, guards, food service) fail.
+- **Duplicate descriptions:** contracts in the same city with the same description collapse to one row.
+- **Result:** 7 of 120 passed (it was 27), 17 need review, and G1 gated out 59. Vehicle repair, towing and tree pruning no longer reach the shortlist.
+
 ## Alternatives considered
 
 | Option | Why not |

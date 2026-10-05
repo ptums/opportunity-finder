@@ -19,3 +19,4 @@ Caps: $5 per run, $20 total. "Actual" is computed from the API's reported usage.
 | 2026-10-05 | claude-sonnet-5-5 | judge-v2.1 | 190 | 515231 | 119223 | $3.7467 | $2.2227 | scout |
 | 2026-10-05 | claude-sonnet-5-5 | judge-v2.1 | 10 | 27818 | 7700 | $0.1991 | $0.1326 | scout |
 | 2026-10-05 | claude-sonnet-5-5 | judge-contract-v1+judge-v2.1 | 122 | 323720 | 87421 | $2.3721 | $1.5216 | scout |
+| 2026-10-05 | claude-sonnet-5-5 | judge-contract-v2+judge-v2.1 | 121 | 334472 | 89571 | $2.4055 | $1.5647 | scout |

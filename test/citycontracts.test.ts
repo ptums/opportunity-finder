@@ -36,9 +36,14 @@ describe("preFilter", () => {
       row({ key: "chicago:1", date: "2026-08-01" }),
       row({ key: "chicago:1", date: "2026-09-01" }),
       row({ key: "chicago:2", description: "DEMOLITION" }),
-      row({ key: "chicago:3", date: "2026-09-15" }),
+      row({ key: "chicago:3", date: "2026-09-15", description: "Records digitization services for building permit files" }),
     ]);
     expect(out.map((r) => [r.key, r.date])).toEqual([["chicago:3", "2026-09-15"], ["chicago:1", "2026-09-01"]]);
+  });
+
+  it("collapses different contracts with the same description in one city", () => {
+    const out = preFilter([row({ key: "a" }), row({ key: "b", description: "SOFTWARE for parking ticket billing and payment plan tracking." }), row({ key: "c", city: "New York City" })]);
+    expect(out.map((r) => r.key)).toEqual(["a", "c"]);
   });
 
   it("drops police, courts and corrections (out of scope)", () => {
