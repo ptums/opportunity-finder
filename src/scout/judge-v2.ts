@@ -9,19 +9,22 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { checkQuote } from "./evidence.js";
+import { checkQuote, stripTrailingArtifacts } from "./evidence.js";
 import { JUDGE_MODEL, OLLAMA_URL } from "./judge.js";
 import type { Score, Scored, Scores } from "./score.js";
 
 // judge-v2.1 (2026-10-04, Peter approved): G3 fails only on a named product that solves this
-// author's problem, not a category. judge-v2.md is kept for the record; its results are in OUTCOMES.
+// author's problem, not a category. judge-v2.2 (thinking on, medium effort) was tried and reverted
+// the same day: junk stayed (42/75) and precision fell. judge-v2.md is kept for the record.
 export const PROMPT_V2_VERSION = "judge-v2.1";
 export const PROMPT_V2 = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "prompts", `${PROMPT_V2_VERSION}.md`), "utf8");
 
 const CACHE_DIR = "data/judge-cache";
 /** Output ceiling per request; also the worst case the cost estimate assumes. */
-// Raised from 1500 on 2026-10-04: Sonnet truncated 3 of 80 answers at 1500 (stop_reason max_tokens).
-export const MAX_OUTPUT_TOKENS = 3000;
+// 1500 → 3000 → back to 1500 (2026-10-04, Peter approved). The 3000 ceiling was for Sonnet's digit
+// loop, which the enum schema fixed. Real answers average ~700 tokens, and the estimate assumes this
+// ceiling, so 3000 pushed a full-list run past the $5 cap. A truncated answer is a recorded failure.
+export const MAX_OUTPUT_TOKENS = 1500;
 const BODY_CHARS = 3000;
 
 export type JudgeName = "local" | "haiku" | "sonnet";
@@ -129,8 +132,9 @@ async function callOllama(model: string, input: string): Promise<unknown> {
 }
 
 async function callAnthropic(spec: JudgeSpec, input: string): Promise<unknown> {
-  // Sonnet 5.5 rejects non-default temperature and can't disable thinking; "between_tools"
-  // turns thinking off for a single-turn call. Haiku 4.5 takes temperature 0 and has no thinking by default.
+  // Sonnet 5.5 rejects non-default temperature and can't disable thinking; "between_tools" turns it off
+  // for a single-turn call. Sonnet appends junk ("</br>", "}") to some strings under any setting tried;
+  // evaluateV2 strips trailing junk. Haiku 4.5 takes temperature 0 and showed no junk.
   const format = { type: "json_schema" as const, schema: JUDGE_JSON_SCHEMA };
   const sampling =
     spec.name === "sonnet"
@@ -224,6 +228,8 @@ export interface EvaluatedV2 {
   criteria: Record<ModelCriterion, Scored>;
   quotesValid: number;
   quotesTotal: number;
+  /** Strings (quotes, reasons, problem) that had trailing markup stripped. */
+  artifacts: number;
   /** The model's own "why" texts, for the rubric-echo rate. */
   reasons: string[];
 }
@@ -232,6 +238,12 @@ export interface EvaluatedV2 {
 export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, model: string): EvaluatedV2 {
   const source = judgeInput(title, body);
   let quotesValid = 0;
+  let artifacts = 0;
+  const clean = (text: string) => {
+    const r = stripTrailingArtifacts(text, source);
+    if (r.stripped) artifacts++;
+    return r.text;
+  };
   const check = (quote: string) => {
     const r = checkQuote(quote, source);
     if (r.valid) quotesValid++;
@@ -240,7 +252,7 @@ export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, mode
 
   const gates = {} as Record<GateKey, GateResult>;
   for (const key of GATES) {
-    const g = raw[key];
+    const g = { ...raw[key], quote: clean(raw[key].quote) };
     const q = check(g.quote);
     const named = key === "g3_not_trivial" ? raw.g3_not_trivial.tool.trim() : "";
     // "none", "n/a", "none named" etc. are not a tool name; G3 must name one to fail (ADR-003).
@@ -252,8 +264,10 @@ export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, mode
 
   const tag = { name: model, promptVersion: PROMPT_V2_VERSION };
   const criteria = {} as Record<ModelCriterion, Scored>;
+  const whys: string[] = [];
   for (const key of MODEL_CRITERIA) {
-    const c = raw[key];
+    const c = { ...raw[key], quote: clean(raw[key].quote), why: clean(raw[key].why) };
+    whys.push(c.why);
     const q = check(c.quote);
     criteria[key] = {
       value: c.score as Score,
@@ -273,12 +287,13 @@ export function evaluateV2(raw: RawJudgmentV2, title: string, body: string, mode
 
   return {
     status,
-    problem: raw.problem.trim() || title,
+    problem: clean(raw.problem).trim() || title,
     gates,
     criteria,
     quotesValid,
     quotesTotal: GATES.length + MODEL_CRITERIA.length,
-    reasons: MODEL_CRITERIA.map((k) => raw[k].why),
+    artifacts,
+    reasons: whys,
   };
 }
 
